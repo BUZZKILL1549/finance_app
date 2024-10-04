@@ -1,8 +1,8 @@
+import 'package:finance_app/sql/db_helper.dart';
+import 'package:finance_app/src/home_page.dart';
+import 'package:finance_app/widgets/gradient_appbar.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
-/*
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -13,15 +13,22 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _username = TextEditingController();
   final TextEditingController _password = TextEditingController();
+  bool passwordVisible = false;
+
+  DBHelper? dbRef;
+
+  @override
+  void initState() {
+    super.initState();
+    passwordVisible = true;
+
+    dbRef = DBHelper.getInstance;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: Colors.grey.shade800,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const GradientAppbar(title: 'Login', leading: false),
       body: Padding(
         padding: const EdgeInsets.all(50.0),
         child: Center(
@@ -38,78 +45,84 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   hoverColor: Colors.black,
                   focusColor: Colors.grey,
-                  hintText: 'Enter your username'
+                  hintText: 'Enter your username',
                 ),
               ),
               const SizedBox(height: 40),
               TextField(
+                obscureText: passwordVisible,
                 controller: _password,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.horizontal(
                       left: Radius.circular(10),
                       right: Radius.circular(10),
                     ),
                   ),
                   hintText: 'Enter your password',
+                  suffixIcon: IconButton(
+                    icon: Icon(passwordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() {
+                        passwordVisible = !passwordVisible;
+                      });
+                    },
+                  ),
+                  alignLabelWithHint: false,
                 ),
+                keyboardType: TextInputType.visiblePassword,
+                textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 60),
-              TextButton(
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.grey.shade900,
-                  foregroundColor: Colors.white,
-                  fixedSize: const Size(600, 50),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[Colors.blueGrey.shade900, Colors.blueGrey.shade500],
+                  ),
+                  borderRadius: BorderRadius.circular(10)
                 ),
-                onPressed: () {},
-                child: const Text('Login'),
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    fixedSize: const Size(600, 60),
+                    padding: const EdgeInsets.all(20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () async {
+                    String uname = _username.text;
+                    String pwd = _password.text;
+
+                    List<Map<String, dynamic>> allUsers = await dbRef!.getAllUsers();
+                    if (uname.isNotEmpty && pwd.isNotEmpty) {
+                      for (var user in allUsers) {
+                        String name = user['uname'];
+                        String password = user['pwd'];
+
+                        if (uname == name && pwd == password) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const HomePage(),
+                            )
+                          );
+                        } 
+                      }
+                    }
+                  },
+                  child: const Text(
+                    'Login',
+                    style: TextStyle(
+                      color: Colors.white
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-*/
-
-
-class DataList extends StatefulWidget {
-  const DataList({super.key});
-
-  @override
-  _DataListState createState() => _DataListState();
-}
-
-class _DataListState extends State<DataList> {
-  List data = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchData();
-  }
-
-  fetchData() async {
-    final response = await http.get(Uri.parse('http://localhost:3000/users'));
-    if (response.statusCode == 200) {
-      setState(() {
-        data = json.decode(response.body);
-      });
-    } else {
-      throw Exception('Failed to load data');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: data.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(data[index]['column_name'].toString()),
-        );
-      },
     );
   }
 }
